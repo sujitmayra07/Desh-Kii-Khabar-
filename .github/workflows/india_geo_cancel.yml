@@ -1,0 +1,41 @@
+name: "India: Cancel a scheduled upload"
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_ids:
+        description: 'YouTube video ID(s) to cancel - space or comma separated'
+        required: true
+        type: string
+
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Same full dependency list as the main workflow, even though this
+      # script only calls get_youtube_service() - importing
+      # news_to_video_india.py to reuse that function pulls in every package
+      # IT imports at module level too (edge-tts, moviepy, etc.), or the
+      # import itself fails before get_youtube_service is ever reached.
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser openai edge-tts "moviepy==1.0.3" pillow numpy requests \
+              google-api-python-client google-auth-oauthlib google-auth-httplib2
+
+      - name: Cancel upload(s)
+        env:
+          YOUTUBE_CLIENT_ID_INDIA: ${{ secrets.YOUTUBE_CLIENT_ID_INDIA }}
+          YOUTUBE_CLIENT_SECRET_INDIA: ${{ secrets.YOUTUBE_CLIENT_SECRET_INDIA }}
+          YOUTUBE_REFRESH_TOKEN_INDIA: ${{ secrets.YOUTUBE_REFRESH_TOKEN_INDIA }}
+        run: |
+          python cancel_upload.py "${{ inputs.video_ids }}"
