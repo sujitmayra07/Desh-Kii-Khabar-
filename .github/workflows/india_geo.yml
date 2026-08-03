@@ -2,20 +2,17 @@ name: Daily India Trending News & Geopolitics Shorts Pipeline
 
 on:
   schedule:
-    # 23:30 UTC = 5:00 AM IST - buffer before the 7:40 AM first slot, widened
+    # 23:30 UTC = 5:00 AM IST - buffer before the 7:30 AM first slot, widened
     # from the 3-video schedule's buffer since 6 videos/day takes longer to render.
     - cron: '30 23 * * *'
   workflow_dispatch: {}
 
-# Distinct group name from the US workflow's "news-to-video-pipeline" - if both
-# ever shared a group, they'd needlessly queue behind each other despite being
-# fully independent pipelines with separate credentials/state files.
 concurrency:
   group: news-to-video-pipeline-india
   cancel-in-progress: false
 
 permissions:
-  contents: write   # only what's needed to commit the updated state files back
+  contents: write
 
 jobs:
   produce-and-publish:
@@ -32,20 +29,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install ffmpeg + Devanagari fonts
+      - name: Install ffmpeg + fonts (Latin + Devanagari)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-noto-core
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-dejavu-core
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install feedparser openai edge-tts "moviepy==1.0.3" pillow numpy requests \
+          pip install feedparser openai edge-tts "moviepy==1.0.3" pillow numpy requests sarvam-ai \
               google-api-python-client google-auth-oauthlib google-auth-httplib2
 
       - name: Run India geopolitics pipeline
         env:
           NVIDIA_API_KEY_INDIA: ${{ secrets.NVIDIA_API_KEY_INDIA }}
+          SARVAM_API_KEY_INDIA: ${{ secrets.SARVAM_API_KEY_INDIA }}
           PEXELS_API_KEY_INDIA: ${{ secrets.PEXELS_API_KEY_INDIA }}
           TELEGRAM_BOT_TOKEN_INDIA: ${{ secrets.TELEGRAM_BOT_TOKEN_INDIA }}
           TELEGRAM_CHAT_ID_INDIA: ${{ secrets.TELEGRAM_CHAT_ID_INDIA }}
