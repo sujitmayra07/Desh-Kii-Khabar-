@@ -2,17 +2,20 @@ name: Daily India Trending News & Geopolitics Shorts Pipeline
 
 on:
   schedule:
-    # 23:30 UTC = 5:00 AM IST - buffer before the 7:30 AM first slot, widened
+    # 23:30 UTC = 5:00 AM IST - buffer before the 7:40 AM first slot, widened
     # from the 3-video schedule's buffer since 6 videos/day takes longer to render.
     - cron: '30 23 * * *'
   workflow_dispatch: {}
 
+# Distinct group name from the US workflow's "news-to-video-pipeline" - if both
+# ever shared a group, they'd needlessly queue behind each other despite being
+# fully independent pipelines with separate credentials/state files.
 concurrency:
   group: news-to-video-pipeline-india
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: write   # only what's needed to commit the updated state files back
 
 jobs:
   produce-and-publish:
@@ -37,7 +40,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install feedparser openai edge-tts "moviepy==1.0.3" pillow numpy requests sarvam-ai \
+          pip install feedparser openai edge-tts "moviepy==1.0.3" pillow numpy requests sarvamai \
               google-api-python-client google-auth-oauthlib google-auth-httplib2
 
       - name: Run India geopolitics pipeline
